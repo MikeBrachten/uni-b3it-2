@@ -6,10 +6,11 @@
 
 #include <Arduino.h>
 
+
 // Code
 
 void communicationInit() {
-    // Code
+    
 }
 
 #endif

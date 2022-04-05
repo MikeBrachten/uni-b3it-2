@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <DeviceState.cpp>
+#include <DeviceConfig.cpp>
 #include <SensorFunctions.cpp>
 #include <ActuatorFunctions.cpp>
 #include <CommunicationFunctions.cpp>
@@ -9,6 +10,8 @@ EventScheduler sensorValueTimer(2000);
 bool manualMode = false;
 
 void setup() {
+  digitalWrite(LED_BUILTIN, State.get());
+  pinMode(D3, INPUT_PULLUP);
   sensorsInit();
   actuatorsInit();
   communicationInit();
@@ -35,6 +38,9 @@ void loop() {
     OLEDDisplay.println(BMP280.getTemperature());
 
     OLEDDisplay.display();
+  }
+  if (flashButtonPress()) {
+    State.toggle();
   }
 }
 

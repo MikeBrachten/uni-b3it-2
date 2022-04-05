@@ -5,6 +5,7 @@
 #define SensorFunctions_cpp
 
 #include <Arduino.h>
+#include <DeviceConfig.cpp>
 
 /** 
  * BMP280 Temperature sensor
@@ -17,8 +18,8 @@ Adafruit_BMP280 bmp;
 
 class BMP280Class {
     private:
-        float temperature; // Celsius
-        float pressure; // Pascal
+        float temperature;
+        float pressure;
     public:
         void init() {
             bmp.begin(0x76, 0x58);
@@ -39,11 +40,67 @@ class BMP280Class {
 BMP280Class BMP280;
 
 /**
+ * AMUX, LDR and Soil
+ */
+
+/** Inputs of the AMUX Board 
+ * @enum {number}
+*/
+enum AMUXInputEnum {
+    LDR,
+    SOIL
+};
+
+class AMUXBoard {
+    private:
+        AMUXInputEnum input = LDR;
+    public:
+        void init() {
+            pinMode(AMUX_SEL_PIN, OUTPUT);
+            digitalWrite(AMUX_SEL_PIN, LOW);
+            pinMode(AMUX_AOUT_PIN, INPUT);
+        }
+        int read() {
+            return analogRead(AMUX_AOUT_PIN);
+        }
+        void select(AMUXInputEnum input) {
+            if (input == SOIL) {
+                digitalWrite(AMUX_SEL_PIN, HIGH);
+            }
+            else {
+                digitalWrite(AMUX_SEL_PIN, LOW);
+            }
+        }
+};
+
+AMUXBoard AMUX;
+
+/**
+ * Flash button
+ */
+
+uint32_t previousButtonPress;
+
+bool flashButtonPress() {
+    if (digitalRead(D3) == LOW && (millis() - previousButtonPress) < 500) {
+        return true;
+        previousButtonPress = millis();
+    }
+    else {
+        return false;
+    }
+}
+
+/**
  * General functions
  */
 
 void sensorsInit() {
+    // BMP280 temperature sensor
     BMP280.init();
+
+    // AMUX board - LDR / Soil
+    AMUX.init();
 }
 
 #endif

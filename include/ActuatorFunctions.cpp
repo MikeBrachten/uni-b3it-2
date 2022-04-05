@@ -5,6 +5,7 @@
 #define ActuatorFunctions_cpp
 
 #include <Arduino.h>
+#include <DeviceConfig.cpp>
 
 /** 
  * OLED Screen
@@ -67,7 +68,6 @@ const unsigned char feedroledlogo [] PROGMEM = {
 #include <Servo.h>
 
 Servo waterServo;
-uint8_t servoPos = 0;
 
 /**
  * General functions
@@ -79,7 +79,7 @@ void actuatorsInit() {
     }
 
     // Servo
-    waterServo.attach(D5);
+    waterServo.attach(SERVO_PIN);
 }
 
 #endif
