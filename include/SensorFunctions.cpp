@@ -79,10 +79,10 @@ AMUXBoard AMUX;
  * Flash button
  */
 
-uint32_t previousButtonPress;
+uint32_t previousButtonPress = 0;
 
 bool flashButtonPress() {
-    if (digitalRead(D3) == LOW && (millis() - previousButtonPress) < 500) {
+    if (digitalRead(FLASH_BUTTON) == LOW && (millis() - previousButtonPress) > 500) {
         return true;
         previousButtonPress = millis();
     }
@@ -101,6 +101,11 @@ void sensorsInit() {
 
     // AMUX board - LDR / Soil
     AMUX.init();
+    
+    // Button
+    pinMode(FLASH_BUTTON, INPUT_PULLUP);
+
+    
 }
 
 #endif

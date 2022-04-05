@@ -18,17 +18,11 @@ enum deviceStateEnum {
 class DeviceState
 {
 private:
-    bool stateChange = true;
     deviceStateEnum state = AUTOMATIC;
 public:
     /** Returns the current state */
     deviceStateEnum get() {
         return state;
-    }
-
-    /** Returns true if state has been changed since last loop */
-    bool changed() {
-        return stateChange;
     }
 
     void toggle() {
@@ -45,9 +39,7 @@ public:
      * @param {deviceStateEnum} newState - State to which the device should be changed
      * */
     void set(deviceStateEnum newState) {
-        digitalWrite(LED_BUILTIN, newState);
         state = newState;
-        stateChange = true;
     }
 };
 
