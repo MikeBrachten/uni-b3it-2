@@ -20,6 +20,8 @@ class DeviceState
 private:
     deviceStateEnum state = AUTOMATIC;
 public:
+    uint32_t waterTime;
+    bool wateringMode = false;
     /** Returns the current state */
     deviceStateEnum get() {
         return state;
