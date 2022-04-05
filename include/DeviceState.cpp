@@ -20,8 +20,6 @@ class DeviceState
 private:
     deviceStateEnum state = AUTOMATIC;
 public:
-    uint32_t waterTime;
-    bool wateringMode = false;
     /** Returns the current state */
     deviceStateEnum get() {
         return state;
@@ -45,6 +43,33 @@ public:
     }
 };
 
+DeviceState State;
+
+#include <ActuatorFunctions.cpp>
+
+class WateringClass {
+    private:
+        uint16_t duration = 5000;
+    public:
+        bool scheduled;
+        uint32_t scheduleTime = 0;
+        void exec() {
+            if ((millis() - scheduleTime) >= 0) {
+                waterServo.write(175);
+            }
+            if ((millis() - scheduleTime) >= duration) {
+                waterServo.write(5);
+                scheduled = false;
+            }
+        }
+        void schedule(uint32_t time) {
+            scheduleTime = time;
+            scheduled = true;
+        }
+};
+
+WateringClass Watering;
+
 class EventScheduler
 {
 private:
@@ -64,7 +89,5 @@ public:
         }
     }
 };
-
-DeviceState State;
 
 #endif

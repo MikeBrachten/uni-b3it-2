@@ -5,10 +5,13 @@
 #include <ActuatorFunctions.cpp>
 #include <CommunicationFunctions.cpp>
 
-EventScheduler screenUpdateTimer(4000);
+EventScheduler screenUpdateTimer(5000);
 EventScheduler sensorValueTimer(1000);
 
 uint8_t indexUI = 0;
+
+uint32_t waterTime;
+bool waterScheduled = false;
 
 void setup() {
   sensorsInit();
@@ -24,32 +27,22 @@ void setup() {
     (OLEDDisplay.height() - 40) / 2,
     feedroledlogo, 112, 40, 1);
   OLEDDisplay.display();
-  //State.waterTime = 10000;
-  //State.wateringMode = true;
 }
 
 void loop() {
-  if (State.wateringMode) {
-    if ((millis() - State.waterTime) > 0) {
+  if (Watering.scheduled) {
+    if ((millis() - waterTime) > 0) {
       OLEDDisplay.clearDisplay();
       OLEDDisplay.setTextSize(2);
       OLEDDisplay.println("WATERING");
       OLEDDisplay.setTextSize(1);
-      OLEDDisplay.print("Now");
-      OLEDDisplay.display();
-      waterServo.write(180);
-      delay(5000);
-      waterServo.write(0);
-      State.wateringMode = false;
-    }
-    else {
-      OLEDDisplay.clearDisplay();
-      OLEDDisplay.setTextSize(2);
-      OLEDDisplay.println("WATERING");
-      OLEDDisplay.setTextSize(1);
-      OLEDDisplay.print("Soon (");
-      OLEDDisplay.print((millis() - State.waterTime) / 1000, 0);
-      OLEDDisplay.println(" sec)");
+      if ((millis() - Watering.scheduleTime) < 0) {
+        OLEDDisplay.print((Watering.scheduleTime - millis()) / 1000, 0);
+        OLEDDisplay.print(" s");
+      }
+      else {
+        OLEDDisplay.print("In progress");
+      }
       OLEDDisplay.display();
     }
   }
@@ -66,7 +59,7 @@ void loop() {
       break;
   };
 
-  if (screenUpdateTimer.exec() && !State.wateringMode) {
+  if (screenUpdateTimer.exec()) {
     OLEDDisplay.clearDisplay();
     OLEDDisplay.setTextColor(WHITE);
     switch (indexUI) {
@@ -106,6 +99,31 @@ void loop() {
         AMUX.select(SOIL);
         OLEDDisplay.println(AMUX.read());
         AMUX.select(LDR);
+        indexUI = 2;
+        break;
+      case 2:
+        OLEDDisplay.setTextSize(1);
+        OLEDDisplay.setCursor(0,0);
+        OLEDDisplay.println(F("Last watering"));
+        OLEDDisplay.setTextSize(2);
+        uint32_t timeElapsed = (millis() - Watering.scheduleTime) / 1000;
+        if (timeElapsed > 0) {
+          if ((timeElapsed / 86400) >= 1.0) {
+            OLEDDisplay.print((int)(timeElapsed / 86400), 0);
+            OLEDDisplay.print("d ");
+          }
+          if ((timeElapsed / 3600) >= 1.0) {
+            OLEDDisplay.print((int)(timeElapsed % 86400 / 3600), 0);
+            OLEDDisplay.print("h ");
+          }
+          if ((timeElapsed / 60) >= 1.0) {
+            OLEDDisplay.print((int)(timeElapsed % 3600 / 60), 0);
+            OLEDDisplay.print("m ");
+          }
+          OLEDDisplay.print((int)(timeElapsed % 60), 0);
+          OLEDDisplay.println("s ");
+        }
+        OLEDDisplay.println("ago");
         indexUI = 0;
         break;
     }
