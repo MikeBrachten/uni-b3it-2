@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include <BMP280Sensor.cpp>
+#include <Servo.h>
 
 #include <OLED.cpp>
 
 BMP280Class BMP280;
+Servo waterServo;
+uint8_t servoPos = 0;
+
 
 void setup() {
   BMP280.init();
@@ -15,6 +19,7 @@ void setup() {
     feedroledlogo, 112, 40, 1);
   display.display();
   delay(2000);
+  waterServo.attach(D5);
 }
 
 void loop() {
@@ -33,25 +38,3 @@ void loop() {
   display.display();
   delay(2000);
 }
-
-/*
-
-#include <BMP280Sensor.cpp>
-
-BMP280Class BMP280;
-
-void setup() {
-  Serial.begin(9600);
-  BMP280.init();
-}
-
-void loop() {
-  BMP280.updateValues();
-  Serial.print("Temperature: ");
-  Serial.println(BMP280.getTemperature());
-  Serial.print("Pressure: ");
-  Serial.println(BMP280.getPressure());
-  delay(2000);
-}
-
-*/
