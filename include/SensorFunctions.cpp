@@ -1,6 +1,13 @@
-/*
-  Sensor functions
-*/
+/**
+ * 
+ * SENSOR FUNCTIONS
+ * File containing functionality for all sensors within the system
+ * 
+ * Project: Feedr for the Ineteraction Technology course of Utrecht University
+ * Authors: Mike Brachten and Abdelghaffar Abd
+ * 
+ **/
+
 #ifndef SensorFunctions_cpp
 #define SensorFunctions_cpp
 
@@ -30,9 +37,13 @@ class BMP280Class {
             pressure = bmp.readPressure();
         }
         float getTemperature() {
+            Serial.print("Temp: ");
+            Serial.println(temperature);
             return temperature;
         }
         float getPressure() {
+            Serial.print("Pressure: ");
+            Serial.println(pressure);
             return pressure;
         }
 };
@@ -43,33 +54,21 @@ BMP280Class BMP280;
  * AMUX, LDR and Soil
  */
 
-/** Inputs of the AMUX Board 
- * @enum {number}
-*/
-enum AMUXInputEnum {
-    LDR,
-    SOIL
-};
-
 class AMUXBoard {
-    private:
-        AMUXInputEnum input = LDR;
     public:
+        uint16_t ldr() {
+            digitalWrite(AMUX_SEL_PIN, LOW);
+            return analogRead(AMUX_AOUT_PIN);
+        }
+        uint16_t soil() {
+            digitalWrite(AMUX_SEL_PIN, HIGH);
+            return analogRead(AMUX_AOUT_PIN);
+            digitalWrite(AMUX_SEL_PIN, LOW);
+        };
         void init() {
             pinMode(AMUX_SEL_PIN, OUTPUT);
             digitalWrite(AMUX_SEL_PIN, LOW);
             pinMode(AMUX_AOUT_PIN, INPUT);
-        }
-        int read() {
-            return analogRead(AMUX_AOUT_PIN);
-        }
-        void select(AMUXInputEnum input) {
-            if (input == SOIL) {
-                digitalWrite(AMUX_SEL_PIN, HIGH);
-            }
-            else {
-                digitalWrite(AMUX_SEL_PIN, LOW);
-            }
         }
 };
 
