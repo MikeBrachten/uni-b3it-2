@@ -37,13 +37,9 @@ class BMP280Class {
             pressure = bmp.readPressure();
         }
         float getTemperature() {
-            Serial.print("Temp: ");
-            Serial.println(temperature);
             return temperature;
         }
         float getPressure() {
-            Serial.print("Pressure: ");
-            Serial.println(pressure);
             return pressure;
         }
 };
@@ -82,8 +78,8 @@ uint32_t previousButtonPress = 0;
 
 bool flashButtonPress() {
     if (digitalRead(FLASH_BUTTON) == LOW && (millis() - previousButtonPress) > 500) {
-        return true;
         previousButtonPress = millis();
+        return true;
     }
     else {
         return false;
