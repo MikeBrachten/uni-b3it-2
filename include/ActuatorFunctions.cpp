@@ -90,6 +90,7 @@ enum screensEnum {
 void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 	// Empty previous contents
 	display.clearDisplay();
+	display.setTextColor(WHITE);
 	switch (screen) {
 		// Boot screen with Feedr logo
 		case bootScreen:
@@ -101,6 +102,7 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 		// Screen if watering is coming up or commencing
 		case watering:
 			display.setTextSize(2);
+			display.setCursor(0,0);
 			display.println("WATERING");
 			display.setTextSize(1);
 			if ((millis() - waterScheduleTime) < 0) {
@@ -137,9 +139,9 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 			display.println(F("SOIL"));
 			display.setTextSize(2);
 			display.setCursor(0, 12);
-			display.print(AMUX.ldr());
+			display.print(AMUX.ldr);
 			display.setCursor(64, 12);
-			display.println(AMUX.soil());
+			display.println(AMUX.soil);
 			break;
 		// Idle screen with last watering timer
 		case idleScreen2:
@@ -195,6 +197,7 @@ void actuatorsInit() {
 
     // Servo
     waterServo.attach(SERVO_PIN);
+	waterServo.write(5);
 
 	// Onboard status LED
 	pinMode(STATE_LED, OUTPUT);

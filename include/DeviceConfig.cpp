@@ -19,4 +19,7 @@
 #define FLASH_BUTTON D3
 #define STATE_LED LED_BUILTIN_AUX
 
+#define WATERFLOW_DURATION 5000 //ms
+#define WATERFLOW_TIMEOUT 5000 //ms
+
 #endif

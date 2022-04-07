@@ -36,6 +36,8 @@ EventScheduler every1s(1000);
 
 uint8_t indexUI = 0;
 
+deviceStateEnum previousState;
+
 void setup() {
   // Initialize sensors, actuators and WiFi communication
   sensorsInit();
@@ -44,54 +46,75 @@ void setup() {
 
   // Boot screen
   showScreen(bootScreen);
+
+  // Get initial value
+  AMUX.updateValues();
 }
 
 void loop() {
-  // If watering will commence soon, display on screen
-  if (Water.scheduled) {
-    showScreen(watering, Water.scheduleTime);
-  }
-
-  // Toggle manual/automatic mode if flash button is pressed
-  if (flashButtonPress()) {
-    State.toggle();
-  };
-
-
-  switch (State.get()) {
-    case AUTOMATIC:
-      digitalWrite(STATE_LED, LOW);
-      break;
-    case MANUAL:
-      digitalWrite(STATE_LED, HIGH);
-      break;
-  };
-
-  if (every5s.exec()) {
-    // Update OLED Screen values
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    switch (indexUI) {
-      case 0:
-        showScreen(idleScreen0);
-        indexUI = 1;
-        break;
-      case 1:
-        showScreen(idleScreen1);
-        indexUI = 2;
-        break;
-      case 2:
-        showScreen(idleScreen2);
-        indexUI = 0;
-        break;
-    }
-    display.display();
-  }
-
+  // Update the status LED
+  State.ledUpdate();
 
   if (every1s.exec()) {
     // Update sensor values
     BMP280.updateValues();
+    AMUX.updateValues();
+  }
+
+  switch (State.get()) {
+    // Both Manual & Automatic
+    case AUTOMATIC:
+      if (AMUX.soil < 350) {
+        Water.schedule(millis() + WATERFLOW_TIMEOUT);
+        previousState = State.get();
+        State.set(WATERING);
+      }
+    case MANUAL:
+      // Toggle manual/automatic mode if flash button is pressed
+      if (flashButtonPress()) {
+        State.toggle();
+      };
+
+      if (every5s.exec()) {
+        // Update OLED Screen values
+        switch (indexUI) {
+          case 0:
+            showScreen(idleScreen0);
+            indexUI = 1;
+            break;
+          case 1:
+            showScreen(idleScreen1);
+            if (Water.scheduleTime) {
+              indexUI = 2;
+            }
+            else {
+              indexUI = 0;
+            }
+            break;
+          case 2:
+            showScreen(idleScreen2);
+            indexUI = 0;
+            break;
+        }
+      }
+      break;
+    case WATERING:
+      if (every1s.exec()) {
+        showScreen(watering, Water.scheduleTime);
+      }
+      if ((millis() - Water.scheduleTime) >= 0) {
+        if (Water.flowing == false) {
+            waterServo.write(175);
+            Water.flowing = true;
+        }
+      }
+      if ((millis() - Water.scheduleTime) >= WATERFLOW_DURATION) {
+        if (Water.flowing) {
+            waterServo.write(5);
+            Water.flowing = false;
+            State.set(previousState);
+        }
+      }
+      break;
   }
 }
-

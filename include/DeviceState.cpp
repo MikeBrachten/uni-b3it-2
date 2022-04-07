@@ -19,7 +19,8 @@
 */
 enum deviceStateEnum {
     MANUAL,
-    AUTOMATIC
+    AUTOMATIC,
+    WATERING
 };
 
 class DeviceState
@@ -54,6 +55,7 @@ public:
     void ledUpdate() {
         switch (state) {
             case AUTOMATIC:
+            case WATERING:
                 digitalWrite(STATE_LED, LOW);
                 break;
             case MANUAL:
@@ -70,30 +72,17 @@ DeviceState State;
 class WateringClass {
     private:
         uint16_t duration = 5000;
+        deviceStateEnum previousState;
     public:
-        /** Returns whether a watering is scheduled soon */
-        bool scheduled = false;
-
+        bool flowing = false;
         /** Returns the time at which watering is/was scheduled */
-        uint32_t scheduleTime = 0;
-
-        /** Executes watering directly using servo */
-        void exec() {
-            if ((millis() - scheduleTime) >= 0) {
-                waterServo.write(175);
-            }
-            if ((millis() - scheduleTime) >= duration) {
-                waterServo.write(5);
-                scheduled = false;
-            }
-        }
+        uint32_t scheduleTime;
 
         /** Schedule a watering 
-         * @param {uint32_t} time - Time at which the plant should be watered
+         * @param {uint8_t} delaySec - Delay in seconds before watering begins
         */
         void schedule(uint32_t time) {
             scheduleTime = time;
-            scheduled = true;
         }
 };
 

@@ -52,15 +52,15 @@ BMP280Class BMP280;
 
 class AMUXBoard {
     public:
-        uint16_t ldr() {
+        uint16_t ldr;
+        uint16_t soil;
+        void updateValues() {
             digitalWrite(AMUX_SEL_PIN, LOW);
-            return analogRead(AMUX_AOUT_PIN);
-        }
-        uint16_t soil() {
+            ldr = analogRead(AMUX_AOUT_PIN);
             digitalWrite(AMUX_SEL_PIN, HIGH);
-            return analogRead(AMUX_AOUT_PIN);
+            soil = analogRead(AMUX_AOUT_PIN);
             digitalWrite(AMUX_SEL_PIN, LOW);
-        };
+        }
         void init() {
             pinMode(AMUX_SEL_PIN, OUTPUT);
             digitalWrite(AMUX_SEL_PIN, LOW);
