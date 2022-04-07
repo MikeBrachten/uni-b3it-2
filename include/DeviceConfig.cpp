@@ -19,4 +19,6 @@
 #define FLASH_BUTTON D3
 #define STATE_LED LED_BUILTIN_AUX
 
+#define SOIL_TRESHOLD 350   // Resistance AD converter value
+
 #endif

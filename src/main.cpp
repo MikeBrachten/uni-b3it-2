@@ -53,10 +53,55 @@ void loop() {
     State.toggle();
   };
 
+<<<<<<< Updated upstream
   // Update the onboard state LED
   State.ledUpdate();
 
   if (everySecond.exec()) {
+=======
+  switch (State.get()) {
+    case AUTOMATIC:
+      digitalWrite(STATE_LED, LOW);
+
+      /* Bug: scherm werkt niet! 
+
+      // If soil is low, water
+      if (AMUX.soil() <= SOIL_TRESHOLD) {
+        Water.schedule(5);
+      }
+
+      // If past schedule time and not yet watered, water now
+      Water.exec();
+      */
+
+      break;
+    case MANUAL:
+      digitalWrite(STATE_LED, HIGH);
+      break;
+  };
+
+  if (every5s.exec()) {
+    // Update OLED Screen values
+    switch (indexUI) {
+      case 0:
+        showScreen(idleScreen0);
+        indexUI = 1;
+        break;
+      case 1:
+        showScreen(idleScreen1);
+        indexUI = 2;
+        break;
+      case 2:
+        showScreen(idleScreen2);
+        indexUI = 0;
+        break;
+    }
+    display.display();
+  }
+
+
+  if (every1s.exec()) {
+>>>>>>> Stashed changes
     // Update sensor values
     BMP280.updateValues();
 

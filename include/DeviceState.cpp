@@ -70,6 +70,7 @@ DeviceState State;
 class WateringClass {
     private:
         uint16_t duration = 5000;
+        bool waterOpen = false;
     public:
         /** Returns whether a watering is scheduled soon */
         bool scheduled = false;
@@ -77,22 +78,28 @@ class WateringClass {
         /** Returns the time at which watering is/was scheduled */
         uint32_t scheduleTime = 0;
 
-        /** Executes watering directly using servo */
+        /** Executes watering routine using servo */
         void exec() {
-            if ((millis() - scheduleTime) >= 0) {
-                waterServo.write(175);
+            if ((millis() - scheduleTime) >= 0 && scheduled == true) {
+                if (waterOpen == false) {
+                    waterServo.write(175);
+                    waterOpen = true;
+                }
             }
             if ((millis() - scheduleTime) >= duration) {
-                waterServo.write(5);
+                if (waterOpen == true) {
+                    waterServo.write(5);
+                    waterOpen = false;
+                }
                 scheduled = false;
             }
         }
 
         /** Schedule a watering 
-         * @param {uint32_t} time - Time at which the plant should be watered
+         * @param {uint8_t} delaySec - How long from now watering should occur
         */
-        void schedule(uint32_t time) {
-            scheduleTime = time;
+        void schedule(uint8_t delaySec) {
+            scheduleTime = millis() + delaySec*1000;
             scheduled = true;
         }
 };
