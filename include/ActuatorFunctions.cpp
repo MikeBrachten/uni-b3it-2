@@ -1,6 +1,13 @@
-/*
-  Actuator functions
-*/
+/**
+ * 
+ * ACTUATOR FUNCTIONS
+ * File containing functionality for all actuators within the system
+ * 
+ * Project: Feedr for the Ineteraction Technology course of Utrecht University
+ * Authors: Mike Brachten and Abdelghaffar Abd
+ * 
+ **/
+
 #ifndef ActuatorFunctions_cpp
 #define ActuatorFunctions_cpp
 
@@ -14,14 +21,16 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <SensorFunctions.cpp>
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
 #define OLED_RESET     -1
 #define SCREEN_ADDRESS 0x3C
-Adafruit_SSD1306 OLEDDisplay(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+/** Bitmap of the Feedr logo */
 const unsigned char feedroledlogo [] PROGMEM = {
 	// 'feedroledlogo, 111x40px
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -61,6 +70,112 @@ const unsigned char feedroledlogo [] PROGMEM = {
 	0x00, 0x00, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+/** Possible screens the device can display 
+ * @enum {number}
+*/
+enum screensEnum {
+    bootScreen,
+	watering,
+	idleScreen0,
+	idleScreen1,
+	idleScreen2
+};
+
+#include <DeviceState.cpp>
+
+/** Change the screen being displayed
+ * @param {screensEnum} screen - Screen to be displayed on the OLED screen
+ * @param {uint32_t} waterScheduleTime - Time at which a watering is/was scheduled (optional)
+*/
+void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
+	// Empty previous contents
+	display.clearDisplay();
+	switch (screen) {
+		// Boot screen with Feedr logo
+		case bootScreen:
+  			display.drawBitmap(
+    			(display.width()  - 112 ) / 2,
+    			(display.height() - 40) / 2,
+    			feedroledlogo, 112, 40, 1);
+			break;
+		// Screen if watering is coming up or commencing
+		case watering:
+			display.setTextSize(2);
+			display.println("WATERING");
+			display.setTextSize(1);
+			if ((millis() - waterScheduleTime) < 0) {
+				display.print((waterScheduleTime - millis()) / 1000, 0);
+				display.print(" s");
+			}
+			else {
+				display.print("In progress");
+			}
+			break;
+		// Idle screen with temperature and pressure values
+		case idleScreen0:
+			display.setTextSize(1);
+			display.setCursor(0,0);
+			display.println(F("Temperature"));
+			display.setTextSize(2);
+			display.print(BMP280.getTemperature(), 2);
+			display.print(" ");
+			display.print((char)247);
+			display.println("C");
+			display.println();
+			display.setTextSize(1);
+			display.println(F("Pressure"));
+			display.setTextSize(2);
+			display.print(BMP280.getPressure()/100, 0);
+			display.println(" hPa");
+			break;
+		// Idle screen with LDR and SOIL sensors values
+		case idleScreen1:
+			display.setTextSize(1);
+			display.setCursor(0,0);
+			display.print(F("LDR"));
+			display.setCursor(64, 0);
+			display.println(F("SOIL"));
+			display.setTextSize(2);
+			display.setCursor(0, 12);
+			display.print(AMUX.ldr());
+			display.setCursor(64, 12);
+			display.println(AMUX.soil());
+			break;
+		// Idle screen with last watering timer
+		case idleScreen2:
+			display.setTextSize(1);
+			display.setCursor(0,0);
+			display.println(F("Last watering"));
+			display.setTextSize(2);
+			uint32_t timeElapsed = (millis() - waterScheduleTime) / 1000;
+			// Utilizes modulo functions and "/x > 1" to display time
+			if (timeElapsed > 0) {
+				// Days
+				if ((timeElapsed / 86400) >= 1.0) {
+					display.print((int)(timeElapsed / 86400), 0);
+					display.print("d ");
+				}
+				// Hours
+				if ((timeElapsed / 3600) >= 1.0) {
+					display.print((int)(timeElapsed % 86400 / 3600), 0);
+					display.print("h ");
+				}
+				// Minutes
+				if ((timeElapsed / 60) >= 1.0) {
+					display.print((int)(timeElapsed % 3600 / 60), 0);
+					display.print("m ");
+				}
+				// Seconds
+				display.print((int)(timeElapsed % 60), 0);
+				display.println("s ");
+			}
+			display.println("ago");
+			break;
+	}
+	// Display the contents on the sceeen
+	display.display();
+}
+
 /**
  * Servo
  */
@@ -74,12 +189,15 @@ Servo waterServo;
 */
 void actuatorsInit() {
     // OLED
-    if(!OLEDDisplay.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
         Serial.println(F("SSD1306 allocation failed"));
     }
 
     // Servo
     waterServo.attach(SERVO_PIN);
+
+	// Onboard status LED
+	pinMode(STATE_LED, OUTPUT);
 }
 
 #endif

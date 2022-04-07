@@ -1,3 +1,28 @@
+/**
+ *
+ *                        .-J:                                                                      
+ *                  ..:^!?Y55J                                                                      
+ *            .^!7?JY555555555~                                                                     
+ *          ~?55555555555JY5557                                                                     
+ *        :Y5555555555Y??Y55557            .?JJJJJJ:                               :BJ              
+ *       .Y5555555J?!!7J555555^            .@B^~~~~.   ^~!!^      :~!!~.     .^!!~.:@5  :^ ^!.      
+ *       ^5555J7^^~7J555555557             .&P       !GP?7?5B?  :5GJ77YG5.  ?#PJ?J5P@Y  P@P5Y:      
+ *       .5J~..~?Y55555555557              .&#Y555: ^@G~^^^^5@! G@!^^^^7@P ?@7     ?@Y  P@~         
+ *        ..^?5555555555P5Y~               .&P      ~@P7?????Y~ #&??????Y? Y@^     ~@Y  P&.         
+ *       .!Y5Y55555555YJ7^                 .&G       Y#?^::!GY  !#5~::~5G^ .G#?^^~?G@Y  P@.         
+ *      ~Y5?: :^^~~~^:.                    .J7        ^?JYYJ~    .7JYYJ7.    ~JYYJ!:J!  7J.         
+ *    .?55!                                                                                         
+ *    ?55Y                                                                                          
+ *   .555Y                                                                                          
+ *    7??7                                                                                          
+ * 
+ * Feedr Plant Feeder
+ * Project for the Ineteraction Technology course of Utrecht University
+ * 
+ * Authors: Mike Brachten and Abdelghaffar Abd
+ * 
+ **/
+
 #include <Arduino.h>
 #include <DeviceState.cpp>
 #include <DeviceConfig.cpp>
@@ -5,50 +30,33 @@
 #include <ActuatorFunctions.cpp>
 #include <CommunicationFunctions.cpp>
 
-EventScheduler screenUpdateTimer(5000);
-EventScheduler sensorValueTimer(1000);
+// Set timers
+EventScheduler every5s(5000);
+EventScheduler every1s(1000);
 
 uint8_t indexUI = 0;
 
-uint32_t waterTime;
-bool waterScheduled = false;
-
 void setup() {
+  // Initialize sensors, actuators and WiFi communication
   sensorsInit();
   actuatorsInit();
   communicationInit();
 
-  pinMode(STATE_LED, OUTPUT);
-
   // Boot screen
-  OLEDDisplay.clearDisplay();
-  OLEDDisplay.drawBitmap(
-    (OLEDDisplay.width()  - 112 ) / 2,
-    (OLEDDisplay.height() - 40) / 2,
-    feedroledlogo, 112, 40, 1);
-  OLEDDisplay.display();
+  showScreen(bootScreen);
 }
 
 void loop() {
-  if (Watering.scheduled) {
-    if ((millis() - waterTime) > 0) {
-      OLEDDisplay.clearDisplay();
-      OLEDDisplay.setTextSize(2);
-      OLEDDisplay.println("WATERING");
-      OLEDDisplay.setTextSize(1);
-      if ((millis() - Watering.scheduleTime) < 0) {
-        OLEDDisplay.print((Watering.scheduleTime - millis()) / 1000, 0);
-        OLEDDisplay.print(" s");
-      }
-      else {
-        OLEDDisplay.print("In progress");
-      }
-      OLEDDisplay.display();
-    }
+  // If watering will commence soon, display on screen
+  if (Water.scheduled) {
+    showScreen(watering, Water.scheduleTime);
   }
+
+  // Toggle manual/automatic mode if flash button is pressed
   if (flashButtonPress()) {
     State.toggle();
   };
+
 
   switch (State.get()) {
     case AUTOMATIC:
@@ -59,78 +67,30 @@ void loop() {
       break;
   };
 
-  if (screenUpdateTimer.exec()) {
-    OLEDDisplay.clearDisplay();
-    OLEDDisplay.setTextColor(WHITE);
+  if (every5s.exec()) {
+    // Update OLED Screen values
+    display.clearDisplay();
+    display.setTextColor(WHITE);
     switch (indexUI) {
       case 0:
-        OLEDDisplay.setTextSize(1);
-        OLEDDisplay.setCursor(0,0);
-        OLEDDisplay.println(F("Temperature"));
-
-        OLEDDisplay.setTextSize(2);
-        OLEDDisplay.print(BMP280.getTemperature(), 1);
-        OLEDDisplay.print(" ");
-        OLEDDisplay.print((char)247);
-        OLEDDisplay.println("C");
-
-        OLEDDisplay.println();
-
-        OLEDDisplay.setTextSize(1);
-        OLEDDisplay.println(F("Pressure"));
-
-        OLEDDisplay.setTextSize(2);
-        OLEDDisplay.print(BMP280.getPressure()/100, 0);
-        OLEDDisplay.println(" hPa");
+        showScreen(idleScreen0);
         indexUI = 1;
         break;
       case 1:
-        OLEDDisplay.setTextSize(1);
-        OLEDDisplay.setCursor(0,0);
-        OLEDDisplay.print(F("LDR"));
-        OLEDDisplay.setCursor(64, 0);
-        OLEDDisplay.println(F("SOIL"));
-
-        OLEDDisplay.setTextSize(2);
-        AMUX.select(LDR);
-        OLEDDisplay.setCursor(0, 12);
-        OLEDDisplay.print(AMUX.read());
-        OLEDDisplay.setCursor(64, 12);
-        AMUX.select(SOIL);
-        OLEDDisplay.println(AMUX.read());
-        AMUX.select(LDR);
+        showScreen(idleScreen1);
         indexUI = 2;
         break;
       case 2:
-        OLEDDisplay.setTextSize(1);
-        OLEDDisplay.setCursor(0,0);
-        OLEDDisplay.println(F("Last watering"));
-        OLEDDisplay.setTextSize(2);
-        uint32_t timeElapsed = (millis() - Watering.scheduleTime) / 1000;
-        if (timeElapsed > 0) {
-          if ((timeElapsed / 86400) >= 1.0) {
-            OLEDDisplay.print((int)(timeElapsed / 86400), 0);
-            OLEDDisplay.print("d ");
-          }
-          if ((timeElapsed / 3600) >= 1.0) {
-            OLEDDisplay.print((int)(timeElapsed % 86400 / 3600), 0);
-            OLEDDisplay.print("h ");
-          }
-          if ((timeElapsed / 60) >= 1.0) {
-            OLEDDisplay.print((int)(timeElapsed % 3600 / 60), 0);
-            OLEDDisplay.print("m ");
-          }
-          OLEDDisplay.print((int)(timeElapsed % 60), 0);
-          OLEDDisplay.println("s ");
-        }
-        OLEDDisplay.println("ago");
+        showScreen(idleScreen2);
         indexUI = 0;
         break;
     }
-    OLEDDisplay.display();
+    display.display();
   }
 
-  if (sensorValueTimer.exec()) {
+
+  if (every1s.exec()) {
+    // Update sensor values
     BMP280.updateValues();
   }
 }

@@ -1,11 +1,18 @@
-/*
-  Device state
-  Global state and session handling functions
-*/
+/**
+ * 
+ * DEVICE STATE
+ * Global state, device property and handling functions
+ * 
+ * Project: Feedr for the Ineteraction Technology course of Utrecht University
+ * Authors: Mike Brachten and Abdelghaffar Abd
+ * 
+ **/
+
 #ifndef DeviceState_cpp
 #define DeviceState_cpp
 
 #include <Arduino.h>
+#include <DeviceConfig.cpp>
 
 /** Possible states of the device 
  * @enum {number}
@@ -25,6 +32,7 @@ public:
         return state;
     }
 
+    /** Toggles the state between manual and automatic mode */
     void toggle() {
         if (state == AUTOMATIC) {
             set(MANUAL);
@@ -41,6 +49,18 @@ public:
     void set(deviceStateEnum newState) {
         state = newState;
     }
+
+    /** Update the onboard LED according to device state */
+    void ledUpdate() {
+        switch (state) {
+            case AUTOMATIC:
+                digitalWrite(STATE_LED, LOW);
+                break;
+            case MANUAL:
+                digitalWrite(STATE_LED, HIGH);
+                break;
+        };
+    }
 };
 
 DeviceState State;
@@ -51,8 +71,13 @@ class WateringClass {
     private:
         uint16_t duration = 5000;
     public:
-        bool scheduled;
+        /** Returns whether a watering is scheduled soon */
+        bool scheduled = false;
+
+        /** Returns the time at which watering is/was scheduled */
         uint32_t scheduleTime = 0;
+
+        /** Executes watering directly using servo */
         void exec() {
             if ((millis() - scheduleTime) >= 0) {
                 waterServo.write(175);
@@ -62,13 +87,17 @@ class WateringClass {
                 scheduled = false;
             }
         }
+
+        /** Schedule a watering 
+         * @param {uint32_t} time - Time at which the plant should be watered
+        */
         void schedule(uint32_t time) {
             scheduleTime = time;
             scheduled = true;
         }
 };
 
-WateringClass Watering;
+WateringClass Water;
 
 class EventScheduler
 {
