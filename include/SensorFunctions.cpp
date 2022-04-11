@@ -74,17 +74,9 @@ AMUXBoard AMUX;
  * Flash button
  */
 
-uint32_t previousButtonPress = 0;
+#include <EasyButton.h>
 
-bool flashButtonPress() {
-    if (digitalRead(FLASH_BUTTON) == LOW && (millis() - previousButtonPress) > 500) {
-        previousButtonPress = millis();
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+EasyButton flashButton(FLASH_BUTTON);
 
 /**
  * General functions
@@ -96,11 +88,6 @@ void sensorsInit() {
 
     // AMUX board - LDR / Soil
     AMUX.init();
-    
-    // Button
-    pinMode(FLASH_BUTTON, INPUT_PULLUP);
-
-    
 }
 
 #endif

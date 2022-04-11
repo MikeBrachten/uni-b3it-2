@@ -76,12 +76,12 @@ class WateringClass {
     public:
         bool flowing = false;
         /** Returns the time at which watering is/was scheduled */
-        uint32_t scheduleTime;
+        unsigned long scheduleTime;
 
         /** Schedule a watering 
          * @param {uint8_t} delaySec - Delay in seconds before watering begins
         */
-        void schedule(uint32_t time) {
+        void schedule(long time) {
             scheduleTime = time;
         }
 };

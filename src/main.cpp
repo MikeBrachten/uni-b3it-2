@@ -33,10 +33,16 @@
 // Set timers
 EventScheduler every5s(5000);
 EventScheduler every1s(1000);
+EventScheduler sensorValueTimer(1000);
 
 uint8_t indexUI = 0;
+uint8_t secondsUI = 0;
 
 deviceStateEnum previousState;
+
+void flashButtonCallback() {
+  State.toggle();
+}
 
 void setup() {
   // Initialize sensors, actuators and WiFi communication
@@ -49,51 +55,91 @@ void setup() {
 
   // Get initial value
   AMUX.updateValues();
+
+  // Attach flash button
+  flashButton.onPressed(flashButtonCallback);
+
+  if (DEBUG) {Serial.begin(9600);}
 }
 
 void loop() {
+  // Poll the button
+  flashButton.read();
+
   // Update the status LED
   State.ledUpdate();
 
-  if (every1s.exec()) {
+  if (sensorValueTimer.exec()) {
     // Update sensor values
     BMP280.updateValues();
     AMUX.updateValues();
+
+    // DEBUG information
+    if (DEBUG) {
+      Serial.print("Time:" );
+      Serial.println(millis());
+      Serial.print("State: ");
+      Serial.println(State.get());
+      Serial.print("Water.scheduleTime:");
+      Serial.println(Water.scheduleTime);
+      Serial.print("millis() - Water.scheduleTime: ");
+      Serial.println(millis() - Water.scheduleTime);
+      Serial.print("timeElapsed: ");
+      Serial.println((millis() - Water.scheduleTime) / 1000);
+      Serial.print("LDR: ");
+      Serial.println(AMUX.ldr);
+      Serial.print("Soil: ");
+      Serial.println(AMUX.soil);
+      Serial.print("Temp: ");
+      Serial.println(BMP280.getTemperature());
+      Serial.print("Pressure: ");
+      Serial.println(BMP280.getPressure());
+      Serial.println();
+      Serial.println();
+    }
   }
 
   switch (State.get()) {
     // Both Manual & Automatic
     case AUTOMATIC:
-      if (AMUX.soil < 350) {
+      if (AMUX.soil < 350 && millis() >= (Water.scheduleTime + 60000)) {
         Water.schedule(millis() + WATERFLOW_TIMEOUT);
         previousState = State.get();
         State.set(WATERING);
       }
     case MANUAL:
-      // Toggle manual/automatic mode if flash button is pressed
-      if (flashButtonPress()) {
-        State.toggle();
-      };
-
-      if (every5s.exec()) {
+      if (every1s.exec()) {
+        secondsUI++;
         // Update OLED Screen values
         switch (indexUI) {
           case 0:
             showScreen(idleScreen0);
-            indexUI = 1;
+            if (secondsUI >= 5) {
+              indexUI = 1;
+              secondsUI = 0;
+            }
             break;
           case 1:
             showScreen(idleScreen1);
             if (Water.scheduleTime) {
-              indexUI = 2;
+              if (secondsUI >= 5) {
+                indexUI = 2;
+                secondsUI = 0;
+              }
             }
             else {
-              indexUI = 0;
+              if (secondsUI >= 5) {
+                indexUI = 0;
+                secondsUI = 0;
+              }
             }
             break;
           case 2:
-            showScreen(idleScreen2);
-            indexUI = 0;
+            showScreen(idleScreen2, Water.scheduleTime);
+            if (secondsUI >= 5) {
+              indexUI = 0;
+              secondsUI = 0;
+            }
             break;
         }
       }
@@ -102,17 +148,17 @@ void loop() {
       if (every1s.exec()) {
         showScreen(watering, Water.scheduleTime);
       }
-      if ((millis() - Water.scheduleTime) >= 0) {
+      if (millis() >= Water.scheduleTime) {
         if (Water.flowing == false) {
             waterServo.write(175);
             Water.flowing = true;
         }
-      }
-      if ((millis() - Water.scheduleTime) >= WATERFLOW_DURATION) {
-        if (Water.flowing) {
-            waterServo.write(5);
-            Water.flowing = false;
-            State.set(previousState);
+        if ((millis() - Water.scheduleTime) >= WATERFLOW_DURATION) {
+          if (Water.flowing) {
+              waterServo.write(5);
+              Water.flowing = false;
+              State.set(previousState);
+          }
         }
       }
       break;

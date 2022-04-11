@@ -83,6 +83,8 @@ enum screensEnum {
 
 #include <DeviceState.cpp>
 
+uint32_t timeElapsed;
+
 /** Change the screen being displayed
  * @param {screensEnum} screen - Screen to be displayed on the OLED screen
  * @param {uint32_t} waterScheduleTime - Time at which a watering is/was scheduled (optional)
@@ -105,12 +107,11 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 			display.setCursor(0,0);
 			display.println("WATERING");
 			display.setTextSize(1);
-			if ((millis() - waterScheduleTime) < 0) {
-				display.print((waterScheduleTime - millis()) / 1000, 0);
-				display.print(" s");
+			if (millis() >= waterScheduleTime) {
+				display.print("Now");
 			}
 			else {
-				display.print("In progress");
+				display.print("Soon");
 			}
 			break;
 		// Idle screen with temperature and pressure values
@@ -149,7 +150,7 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 			display.setCursor(0,0);
 			display.println(F("Last watering"));
 			display.setTextSize(2);
-			uint32_t timeElapsed = (millis() - waterScheduleTime) / 1000;
+			timeElapsed = ((millis() - waterScheduleTime) / 1000);
 			// Utilizes modulo functions and "/x > 1" to display time
 			if (timeElapsed > 0) {
 				// Days
