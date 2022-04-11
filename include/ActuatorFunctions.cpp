@@ -75,6 +75,7 @@ const unsigned char feedroledlogo [] PROGMEM = {
 */
 enum screensEnum {
     bootScreen,
+	bootScreenNoWifi,
 	watering,
 	idleScreen0,
 	idleScreen1,
@@ -95,6 +96,13 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 	display.setTextColor(WHITE);
 	switch (screen) {
 		// Boot screen with Feedr logo
+		case bootScreenNoWifi:
+			display.drawBitmap(0, 0, feedroledlogo, 112, 40, 1);
+			display.setTextSize(1);
+			display.setCursor(0,48);
+			display.println("To set up your Feedr,");
+			display.println("connect to Feedr WiFi");
+			break;
 		case bootScreen:
   			display.drawBitmap(
     			(display.width()  - 112 ) / 2,

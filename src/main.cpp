@@ -57,13 +57,15 @@ void flashButtonCallback() {
 }
 
 void setup() {
-  // Initialize sensors, actuators and WiFi communication
+  // Initialize sensors, actuators
   sensorsInit();
   actuatorsInit();
-  communicationInit();
 
   // Boot screen
   showScreen(bootScreen);
+
+  // Initialize WiFi communication
+  communicationInit();
 
   // Get initial value
   AMUX.updateValues();

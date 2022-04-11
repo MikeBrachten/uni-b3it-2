@@ -13,10 +13,23 @@
 
 #include <Arduino.h>
 
-// @Abodi: Plaats hier je WiFi code
+#include <ESP8266WiFi.h>
+
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+
+#include <ActuatorFunctions.cpp>
+
+void noWifi(WiFiManager *myWiFiManager) {
+  showScreen(bootScreenNoWifi);
+}
 
 void communicationInit() {
-    // @Abodi: Plaats hier je WiFi setup code
+    WiFiManager wifiManager;
+    wifiManager.setAPCallback(noWifi);
+    wifiManager.setConfigPortalTimeout(180);
+    wifiManager.autoConnect("Feedr Setup");
 }
 
 #endif
