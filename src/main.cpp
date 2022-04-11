@@ -40,7 +40,19 @@ uint8_t secondsUI = 0;
 
 deviceStateEnum previousState;
 
+void planWater() {
+  // Schedule watering
+  Water.schedule(millis() + WATERFLOW_TIMEOUT);
+
+  // Remember previous state
+  previousState = State.get();
+
+  // Set watering state
+  State.set(WATERING);
+}
+
 void flashButtonCallback() {
+  // If flash button is pressed shortly, toggle state.
   State.toggle();
 }
 
@@ -56,8 +68,9 @@ void setup() {
   // Get initial value
   AMUX.updateValues();
 
-  // Attach flash button
+  // Attach flash button, short press is toggle state, long is watering
   flashButton.onPressed(flashButtonCallback);
+  flashButton.onPressedFor(4000, planWater);
 
   if (DEBUG) {Serial.begin(9600);}
 }
@@ -102,18 +115,22 @@ void loop() {
   switch (State.get()) {
     // Both Manual & Automatic
     case AUTOMATIC:
-      if (AMUX.soil < 350 && millis() >= (Water.scheduleTime + 60000)) {
-        Water.schedule(millis() + WATERFLOW_TIMEOUT);
-        previousState = State.get();
-        State.set(WATERING);
+      // If the soil is dry and last watering was longer than 30s ago
+      if (AMUX.soil < 350 && millis() >= (Water.scheduleTime + 30000)) {
+        planWater();
       }
     case MANUAL:
       if (every1s.exec()) {
+        // Another second passed, register.
         secondsUI++;
+
         // Update OLED Screen values
         switch (indexUI) {
           case 0:
+            // Show screen 0
             showScreen(idleScreen0);
+
+            // On 5th second, go to next screen
             if (secondsUI >= 5) {
               indexUI = 1;
               secondsUI = 0;
@@ -121,12 +138,15 @@ void loop() {
             break;
           case 1:
             showScreen(idleScreen1);
+
+            // In case watered before, show last watering screen
             if (Water.scheduleTime) {
               if (secondsUI >= 5) {
                 indexUI = 2;
                 secondsUI = 0;
               }
             }
+            // If not watered before, dont display last watering screen
             else {
               if (secondsUI >= 5) {
                 indexUI = 0;
@@ -146,18 +166,23 @@ void loop() {
       break;
     case WATERING:
       if (every1s.exec()) {
+        // Show/refresh watering screen
         showScreen(watering, Water.scheduleTime);
       }
+      // If later than scheduled watering time
       if (millis() >= Water.scheduleTime) {
+        // Water should flow now, open servo.
         if (Water.flowing == false) {
-            waterServo.write(175);
-            Water.flowing = true;
+          waterServo.write(175);
+          Water.flowing = true;
         }
+        // If sufficient amount of water has been given
         if ((millis() - Water.scheduleTime) >= WATERFLOW_DURATION) {
           if (Water.flowing) {
-              waterServo.write(5);
-              Water.flowing = false;
-              State.set(previousState);
+            // Close water
+            waterServo.write(5);
+            Water.flowing = false;
+            State.set(previousState);
           }
         }
       }
