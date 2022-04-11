@@ -84,6 +84,17 @@ void loop() {
   // Update the status LED
   State.ledUpdate();
 
+  if(every5s.exec()) {
+    if (MQTT.connected()) {
+      float pres = BMP280.getPressure();
+      float temp = BMP280.getTemperature();
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/temperature", ((String)temp).c_str());
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/pressure", ((String)pres).c_str());
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/light", ((String)AMUX.ldr).c_str());
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/soil", ((String)AMUX.soil).c_str());
+    }
+  }
+
   if (sensorValueTimer.exec()) {
     // Update sensor values
     BMP280.updateValues();
