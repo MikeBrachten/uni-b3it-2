@@ -52,15 +52,7 @@ PubSubClient MQTT(espClient);
  */
 
 void communicationInit() {
-  wifiManager.setAPCallback(noWifi);
-  wifiManager.setConfigPortalTimeout(180);
-  wifiManager.autoConnect("Feedr Setup");
-
-  MQTT.setServer("mqtt.uu.nl", 1883);
-  //MQTT.setCallback(function);
-  while(!MQTT.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
-    // Wait for MQTT Connection
-  }
+  // Couldn'nt be done for MQTT :(
 }
 
 #endif

@@ -16,10 +16,14 @@
  *   .555Y                                                                                          
  *    7??7                                                                                          
  * 
- * Feedr Plant Feeder
- * Project for the Ineteraction Technology course of Utrecht University
  * 
- * Authors: Mike Brachten and Abdelghaffar Abd
+ * +---------------------------------------------------------------------+
+ * | Feedr Plant Feeder                                                  |
+ * | Project for the Interaction Technology course of Utrecht University |
+ * |                                                                     |
+ * | Authors: Mike Brachten and Abdelghaffar Ab                          |
+ * +---------------------------------------------------------------------+ 
+ * 
  * 
  **/
 
@@ -56,6 +60,43 @@ void flashButtonCallback() {
   State.toggle();
 }
 
+void updateValues() {
+  // Update sensor values
+  BMP280.updateValues();
+  AMUX.updateValues();
+}
+
+void updateMQTT() {
+  if (MQTT.connected()) {
+    float pres = BMP280.getPressure();
+    float temp = BMP280.getTemperature();
+    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/temperature", ((String)temp).c_str());
+    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/pressure", ((String)pres).c_str());
+    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/light", ((String)AMUX.ldr).c_str());
+    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/soil", ((String)AMUX.soil).c_str());
+  }
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  switch (topic) {
+    case "infob3it/091/DEN307/BG/LivingRoom/Yucca/commands":
+      if (payload[0] == 'w') {
+        // Water now
+        planWater();
+      }
+      else if (payload[0] == 'u') {
+        // Update values
+        updateValues();
+        updateMQTT();
+      }
+      break;
+    case "infob3it/091/DEN307/BG/LivingRoom/Yucca/mode":
+      // TODO
+      break;
+  }
+  
+}
+
 void setup() {
   // Initialize sensors, actuators
   sensorsInit();
@@ -64,8 +105,16 @@ void setup() {
   // Boot screen
   showScreen(bootScreen);
 
-  // Initialize WiFi communication
-  communicationInit();
+  // These couldn't be in communicationInit() :(
+  wifiManager.setAPCallback(noWifi);
+  wifiManager.setConfigPortalTimeout(180);
+  wifiManager.autoConnect("Feedr Setup");
+  MQTT.setServer("mqtt.uu.nl", 1883);
+  MQTT.setCallback(mqttCallback);
+  while(!MQTT.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
+    // Wait for MQTT Connection
+  }
+  MQTT.subscribe("infob3it/091/DEN307/BG/LivingRoom/Yucca/commands", 0);
 
   // Get initial value
   AMUX.updateValues();
@@ -75,6 +124,7 @@ void setup() {
   flashButton.onPressedFor(4000, planWater);
 
   if (DEBUG) {Serial.begin(9600);}
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -84,21 +134,15 @@ void loop() {
   // Update the status LED
   State.ledUpdate();
 
+  // MQTT Loop
+  MQTT.loop();
+
   if(every5s.exec()) {
-    if (MQTT.connected()) {
-      float pres = BMP280.getPressure();
-      float temp = BMP280.getTemperature();
-      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/temperature", ((String)temp).c_str());
-      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/pressure", ((String)pres).c_str());
-      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/light", ((String)AMUX.ldr).c_str());
-      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/soil", ((String)AMUX.soil).c_str());
-    }
+    updateMQTT();
   }
 
   if (sensorValueTimer.exec()) {
-    // Update sensor values
-    BMP280.updateValues();
-    AMUX.updateValues();
+    updateValues();
 
     // DEBUG information
     if (DEBUG) {
