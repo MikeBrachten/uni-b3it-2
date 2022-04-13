@@ -17,12 +17,12 @@
  *    7??7                                                                                          
  * 
  * 
- * +---------------------------------------------------------------------+
- * | Feedr Plant Feeder                                                  |
- * | Project for the Interaction Technology course of Utrecht University |
- * |                                                                     |
- * | Authors: Mike Brachten and Abdelghaffar Ab                          |
- * +---------------------------------------------------------------------+ 
+ *              +---------------------------------------------------------------------+                          
+ *              | Feedr Plant Feeder                                                  |
+ *              | Project for the Interaction Technology course of Utrecht University |
+ *              |                                                                     |
+ *              | Authors: Mike Brachten and Abdelghaffar Abd                         |
+ *              +---------------------------------------------------------------------+ 
  * 
  * 
  **/
@@ -59,6 +59,7 @@ void flashButtonCallback() {
   // If flash button is pressed shortly, toggle state.
   State.toggle();
 
+  // Update state in MQTT upon changing
   if (MQTT.connected()) {
     if (State.get() == MANUAL) {
       MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/mode", "m", true);
@@ -69,12 +70,13 @@ void flashButtonCallback() {
   }
 }
 
+// Update sensor values
 void updateValues() {
-  // Update sensor values
   BMP280.updateValues();
   AMUX.updateValues();
 }
 
+// Send updated sensor values to MQTT
 void updateMQTT() {
   if (MQTT.connected()) {
     float pres = BMP280.getPressure();
@@ -86,7 +88,20 @@ void updateMQTT() {
   }
 }
 
+// Connect to MQTT
+void connectMQTT() {
+  MQTT.setServer("mqtt.uu.nl", 1883);
+  MQTT.setCallback(mqttCallback);
+  while(!MQTT.connect(mqtt_clientid, mqtt_user, mqtt_pass, "infob3it/091/DEN307/BG/LivingRoom/Yucca/status", 1, true, "offline")) {
+    // Wait for MQTT Connection
+  }
+  MQTT.subscribe("infob3it/091/DEN307/BG/LivingRoom/Yucca/commands", 0);
+  MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/status", "online", true);
+}
+
+// Handle MQTT messages
 void mqttCallback(String topic, byte* payload, unsigned int length) {
+  // Commands
   if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/commands") {
     if (payload[0] == 'w') {
       // Water now
@@ -98,6 +113,7 @@ void mqttCallback(String topic, byte* payload, unsigned int length) {
       updateMQTT();
     }
   }
+  // Mode switches
   else if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/mode") {
     if (payload[0] == 'a') {
       if (State.get() == MANUAL) {
@@ -124,12 +140,8 @@ void setup() {
   wifiManager.setAPCallback(noWifi);
   wifiManager.setConfigPortalTimeout(180);
   wifiManager.autoConnect("Feedr Setup");
-  MQTT.setServer("mqtt.uu.nl", 1883);
-  MQTT.setCallback(mqttCallback);
-  while(!MQTT.connect(mqtt_clientid, mqtt_user, mqtt_pass)) {
-    // Wait for MQTT Connection
-  }
-  MQTT.subscribe("infob3it/091/DEN307/BG/LivingRoom/Yucca/commands", 0);
+
+  connectMQTT();
 
   // Get initial value
   AMUX.updateValues();
@@ -153,35 +165,16 @@ void loop() {
   MQTT.loop();
 
   if(every5s.exec()) {
+    // If connection lost, reconnect
+    if(!MQTT.connected()) {
+      connectMQTT();
+    }
+    
     updateMQTT();
   }
 
   if (sensorValueTimer.exec()) {
     updateValues();
-
-    // DEBUG information
-    if (DEBUG) {
-      Serial.print("Time:" );
-      Serial.println(millis());
-      Serial.print("State: ");
-      Serial.println(State.get());
-      Serial.print("Water.scheduleTime:");
-      Serial.println(Water.scheduleTime);
-      Serial.print("millis() - Water.scheduleTime: ");
-      Serial.println(millis() - Water.scheduleTime);
-      Serial.print("timeElapsed: ");
-      Serial.println((millis() - Water.scheduleTime) / 1000);
-      Serial.print("LDR: ");
-      Serial.println(AMUX.ldr);
-      Serial.print("Soil: ");
-      Serial.println(AMUX.soil);
-      Serial.print("Temp: ");
-      Serial.println(BMP280.getTemperature());
-      Serial.print("Pressure: ");
-      Serial.println(BMP280.getPressure());
-      Serial.println();
-      Serial.println();
-    }
   }
 
   switch (State.get()) {
@@ -245,14 +238,14 @@ void loop() {
       if (millis() >= Water.scheduleTime) {
         // Water should flow now, open servo.
         if (Water.flowing == false) {
-          waterServo.write(175);
+          waterServo.write(0);
           Water.flowing = true;
         }
         // If sufficient amount of water has been given
         if ((millis() - Water.scheduleTime) >= WATERFLOW_DURATION) {
           if (Water.flowing) {
             // Close water
-            waterServo.write(5);
+            waterServo.write(180);
             Water.flowing = false;
             State.set(previousState);
           }

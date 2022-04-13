@@ -104,10 +104,10 @@ void showScreen(screensEnum screen, uint32_t waterScheduleTime = 0) {
 			display.println("connect to Feedr WiFi");
 			break;
 		case bootScreen:
-  			display.drawBitmap(
-    			(display.width()  - 112 ) / 2,
-    			(display.height() - 40) / 2,
-    			feedroledlogo, 112, 40, 1);
+			display.drawBitmap(0, 0, feedroledlogo, 112, 40, 1);
+			display.setTextSize(1);
+			display.setCursor(0,48);
+			display.println("Starting Feedr...");
 			break;
 		// Screen if watering is coming up or commencing
 		case watering:
