@@ -1,0 +1,91 @@
+[
+    {
+        "id": "3ca5b3814f547b2d",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fe761fc8af8f6036",
+        "type": "serial in",
+        "z": "3ca5b3814f547b2d",
+        "name": "Serial in",
+        "serial": "430f989de05d1107",
+        "x": 440,
+        "y": 300,
+        "wires": [
+            [
+                "65fba29fd3e503e6"
+            ]
+        ]
+    },
+    {
+        "id": "65fba29fd3e503e6",
+        "type": "mqtt out",
+        "z": "3ca5b3814f547b2d",
+        "name": "Send to MQTT commands topic",
+        "topic": "infob3it/091/DEN307/BG/LivingRoom/Yucca/temperature",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "0a46560fe71678c7",
+        "x": 670,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "430f989de05d1107",
+        "type": "serial-port",
+        "serialport": "COM6",
+        "serialbaud": "9600",
+        "databits": "8",
+        "parity": "none",
+        "stopbits": "1",
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": "10000"
+    },
+    {
+        "id": "0a46560fe71678c7",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "mqtt.uu.nl",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "sessionExpiry": "",
+        "credentials": {
+            "user": "student091",
+            "password": "bZXjFr7W"
+        }
+    }
+]
