@@ -58,6 +58,15 @@ void planWater() {
 void flashButtonCallback() {
   // If flash button is pressed shortly, toggle state.
   State.toggle();
+
+  if (MQTT.connected()) {
+    if (State.get() == MANUAL) {
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/mode", "m", true);
+    }
+    else if (State.get() == AUTOMATIC) {
+      MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/mode", "a", true);
+    }
+  }
 }
 
 void updateValues() {
@@ -77,24 +86,30 @@ void updateMQTT() {
   }
 }
 
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  switch (topic) {
-    case "infob3it/091/DEN307/BG/LivingRoom/Yucca/commands":
-      if (payload[0] == 'w') {
-        // Water now
-        planWater();
-      }
-      else if (payload[0] == 'u') {
-        // Update values
-        updateValues();
-        updateMQTT();
-      }
-      break;
-    case "infob3it/091/DEN307/BG/LivingRoom/Yucca/mode":
-      // TODO
-      break;
+void mqttCallback(String topic, byte* payload, unsigned int length) {
+  if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/commands") {
+    if (payload[0] == 'w') {
+      // Water now
+      planWater();
+    }
+    else if (payload[0] == 'u') {
+      // Update values
+      updateValues();
+      updateMQTT();
+    }
   }
-  
+  else if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/mode") {
+    if (payload[0] == 'a') {
+      if (State.get() == MANUAL) {
+        State.set(AUTOMATIC);
+      }
+    }
+    else if (payload[0] == 'm') {
+      if (State.get() == AUTOMATIC) {
+        State.set(MANUAL);
+      }
+    }
+  }
 }
 
 void setup() {
