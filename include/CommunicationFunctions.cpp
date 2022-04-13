@@ -40,9 +40,8 @@ WiFiManager wifiManager;
 
 const char* mqtt_server = "mqtt.uu.nl";
 const char* mqtt_clientid = "Freshr1";
-const char* mqtt_user = "student091";
-const char* mqtt_pass = "bZXjFr7W";
-const char* mqtt_topic_prefix = "infob3it/091/";
+const char* mqtt_user = "";
+const char* mqtt_pass = "";
 
 WiFiClient espClient;
 PubSubClient MQTT(espClient);
