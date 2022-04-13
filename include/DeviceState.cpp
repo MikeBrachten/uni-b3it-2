@@ -87,6 +87,18 @@ class WateringClass {
 };
 
 WateringClass Water;
+deviceStateEnum previousState;
+
+void planWater() {
+  // Schedule watering
+  Water.schedule(millis() + WATERFLOW_TIMEOUT);
+
+  // Remember previous state
+  previousState = State.get();
+
+  // Set watering state
+  State.set(WATERING);
+}
 
 class EventScheduler
 {

@@ -42,19 +42,6 @@ EventScheduler sensorValueTimer(1000);
 uint8_t indexUI = 0;
 uint8_t secondsUI = 0;
 
-deviceStateEnum previousState;
-
-void planWater() {
-  // Schedule watering
-  Water.schedule(millis() + WATERFLOW_TIMEOUT);
-
-  // Remember previous state
-  previousState = State.get();
-
-  // Set watering state
-  State.set(WATERING);
-}
-
 void flashButtonCallback() {
   // If flash button is pressed shortly, toggle state.
   State.toggle();
@@ -70,62 +57,6 @@ void flashButtonCallback() {
   }
 }
 
-// Update sensor values
-void updateValues() {
-  BMP280.updateValues();
-  AMUX.updateValues();
-}
-
-// Send updated sensor values to MQTT
-void updateMQTT() {
-  if (MQTT.connected()) {
-    float pres = BMP280.getPressure();
-    float temp = BMP280.getTemperature();
-    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/temperature", ((String)temp).c_str());
-    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/pressure", ((String)(pres/100)).c_str());
-    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/light", ((String)AMUX.ldr).c_str());
-    MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/soil", ((String)AMUX.soil).c_str());
-  }
-}
-
-// Handle MQTT messages
-void mqttCallback(String topic, byte* payload, unsigned int length) {
-  // Commands
-  if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/commands") {
-    if (payload[0] == 'w') {
-      // Water now
-      planWater();
-    }
-    else if (payload[0] == 'u') {
-      // Update values
-      updateValues();
-      updateMQTT();
-    }
-  }
-  // Mode switches
-  else if (topic == "infob3it/091/DEN307/BG/LivingRoom/Yucca/mode") {
-    if (payload[0] == 'a') {
-      State.set(AUTOMATIC);
-    }
-    else if (payload[0] == 'm') {
-      State.set(MANUAL);
-    }
-  }
-}
-
-// Connect to MQTT
-void connectMQTT() {
-  MQTT.setServer("mqtt.uu.nl", 1883);
-  MQTT.setCallback(mqttCallback);
-  while(!MQTT.connect(mqtt_clientid, mqtt_user, mqtt_pass, "infob3it/091/DEN307/BG/LivingRoom/Yucca/status", 1, true, "offline")) {
-    // Wait for MQTT Connection
-  }
-  MQTT.subscribe("infob3it/091/DEN307/BG/LivingRoom/Yucca/commands", 0);
-  MQTT.subscribe("infob3it/091/DEN307/BG/LivingRoom/Yucca/mode", 0);
-  MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/status", "online", true);
-  MQTT.publish("infob3it/091/DEN307/BG/LivingRoom/Yucca/mode", "a", true);
-}
-
 void setup() {
   // Initialize sensors, actuators
   sensorsInit();
@@ -134,22 +65,16 @@ void setup() {
   // Boot screen
   showScreen(bootScreen);
 
-  // These couldn't be in communicationInit() :(
-  wifiManager.setAPCallback(noWifi);
-  wifiManager.setConfigPortalTimeout(180);
-  wifiManager.autoConnect("Feedr Setup");
+  // Initialize WiFi and MQTT
+  communicationInit();
 
-  connectMQTT();
-
-  // Get initial value
+  // Get initial values
   AMUX.updateValues();
+  updateValues();
 
   // Attach flash button, short press is toggle state, long is watering
   flashButton.onPressed(flashButtonCallback);
   flashButton.onPressedFor(4000, planWater);
-
-  if (DEBUG) {Serial.begin(9600);}
-  Serial.begin(9600);
 }
 
 void loop() {
@@ -171,6 +96,7 @@ void loop() {
     updateMQTT();
   }
 
+  // Update sensor values in time
   if (sensorValueTimer.exec()) {
     updateValues();
   }

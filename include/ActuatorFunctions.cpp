@@ -198,6 +198,14 @@ Servo waterServo;
 /**
  * General functions
 */
+
+// Update sensor values
+void updateValues() {
+  BMP280.updateValues();
+  AMUX.updateValues();
+}
+
+// Initiate actuators
 void actuatorsInit() {
     // OLED
     if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {

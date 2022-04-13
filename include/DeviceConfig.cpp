@@ -22,7 +22,4 @@
 #define WATERFLOW_DURATION 5000 //ms
 #define WATERFLOW_TIMEOUT 5000 //ms
 
-// Note that the DEBUG feature disables switching modes using the flash button
-#define DEBUG false
-
 #endif

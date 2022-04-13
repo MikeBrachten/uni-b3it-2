@@ -1,5 +1,4 @@
 * You should install Node-RED (which requires Node.js), and use it to connect to the MQTT broker for flow-based control and visualization.
-* You should install an MQTT app on your phone that allows you to build a UI, and use it to connect to the MQTT broker for control and visualization. We’ve had some success with free (Android) apps such as MQTT Dash and MQTT Dashboard. Other suggestions are welcome (especially for iOS)! If you can’t find a suitable free app for your phone platform, feel free to use the Node-RED dashboard plugin to build your UI and use your phone’s web browser.
 * You should use Node-RED to create a flow that connects to the MQTT broker and subscribes and publishes to a number of MQTT topics. You should use a Node-RED dashboard to visualize sensor values using gauges and graphs, and to issue commands to water the plant, update the sensor values and control and monitor automatic/manual mode. You should also show the online status of your thing in the dashboard. You may use any Node-RED plugin, as long as you give credit.
 
 Nice to have:
